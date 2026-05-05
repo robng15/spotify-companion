@@ -49,10 +49,6 @@ body {
 .sc-section {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-}
-
-.sc-section-grow {
   flex: 1;
   min-height: 0;
 }

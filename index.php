@@ -43,7 +43,7 @@ if (!is_authenticated()) {
       </div>
     </section>
 
-    <section class="sc-section sc-section-grow">
+    <section class="sc-section">
       <h6 class="sc-section-header">Recently played...</h6>
       <div class="sc-track-list sc-scrollable" id="history-list">
         <p class="sc-empty">No history yet</p>
