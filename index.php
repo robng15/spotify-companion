@@ -4,7 +4,15 @@ require_once __DIR__ . '/spotify.php';
 
 if (!is_authenticated()) {
     $state = bin2hex(random_bytes(16));
-    $_SESSION['oauth_state'] = $state;
+    // Store in a dedicated cookie with SameSite=Lax so it survives the
+    // cross-origin redirect back from Spotify (PHP sessions may not).
+    setcookie('oauth_state', $state, [
+        'expires'  => time() + 600,
+        'path'     => '/',
+        'secure'   => true,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     header('Location: ' . spotify_auth_url($state));
     exit;
 }

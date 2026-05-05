@@ -11,12 +11,16 @@ if (empty($_GET['code']) || empty($_GET['state'])) {
     exit;
 }
 
-// CSRF check
-if ($_GET['state'] !== ($_SESSION['oauth_state'] ?? '')) {
+// State stored in a SameSite=Lax cookie (survives cross-origin redirect from Spotify)
+$expected = $_COOKIE['oauth_state'] ?? null;
+
+if (!$expected || !hash_equals($expected, $_GET['state'])) {
     http_response_code(400);
-    die('Invalid state — possible CSRF. Please try again.');
+    die('Invalid state — please go back and try again.');
 }
-unset($_SESSION['oauth_state']);
+
+// Clear the state cookie
+setcookie('oauth_state', '', ['expires' => time() - 3600, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
 
 $data = _token_request([
     'grant_type'   => 'authorization_code',
@@ -25,7 +29,7 @@ $data = _token_request([
 ]);
 
 if (empty($data['access_token'])) {
-    die('Failed to obtain access token from Spotify.');
+    die('Failed to obtain access token from Spotify. Response: ' . htmlspecialchars(json_encode($data)));
 }
 
 save_tokens($data['access_token'], $data['refresh_token'], $data['expires_in']);
