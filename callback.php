@@ -1,6 +1,6 @@
 <?php
 // Debug log — remove once auth is working
-$log = fn(string $msg) => file_put_contents(__DIR__ . '/callback.log', date('[H:i:s] ') . $msg . "\n", FILE_APPEND);
+$log = fn(string $msg) => file_put_contents(dirname(__DIR__) . '/callback.log', date('[H:i:s] ') . $msg . "\n", FILE_APPEND);
 
 $log('--- hit ---');
 $log('GET: ' . json_encode($_GET));
