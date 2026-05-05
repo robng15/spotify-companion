@@ -28,15 +28,18 @@ if ($track_id !== ($_SESSION['features_track'] ?? null)) {
     $features = $_SESSION['features'] ?? [];
 }
 
-// Log to history when track changes
-if (($playback['is_playing'] ?? false) && $track_id !== ($_SESSION['last_track_id'] ?? null)) {
-    $_SESSION['last_track_id'] = $track_id;
+// Log to history when track changes — check DB directly so page reloads
+// don't re-insert the currently playing track
+if ($playback['is_playing'] ?? false) {
     try {
-        $db = get_db();
-        $db->prepare("
-            INSERT INTO history (track_id, track_name, artist, album, artwork_url, duration_ms)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ")->execute([$track_id, $item['name'], implode(', ', $artists), $album['name'] ?? '', $artwork, $item['duration_ms'] ?? 0]);
+        $db   = get_db();
+        $last = $db->query("SELECT track_id FROM history ORDER BY id DESC LIMIT 1")->fetchColumn();
+        if ($last !== $track_id) {
+            $db->prepare("
+                INSERT INTO history (track_id, track_name, artist, album, artwork_url, duration_ms)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ")->execute([$track_id, $item['name'], implode(', ', $artists), $album['name'] ?? '', $artwork, $item['duration_ms'] ?? 0]);
+        }
     } catch (Exception $e) {}
 }
 
