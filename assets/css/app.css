@@ -51,8 +51,13 @@ body {
 }
 
 .sc-name-slot {
-  height: 24px;
   flex-shrink: 0;
+}
+
+.sc-logo {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .sc-section {

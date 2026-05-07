@@ -35,7 +35,9 @@ if (!is_authenticated()) {
     <!-- ── LEFT PANEL ───────────────────────────────────── -->
     <aside class="sc-left">
 
-      <div class="sc-name-slot" id="name-slot"></div>
+      <div class="sc-name-slot" id="name-slot">
+        <img src="/assets/SVG/winchester-fm-logo.svg" alt="Winchester FM" class="sc-logo">
+      </div>
 
       <section class="sc-section">
         <h6 class="sc-section-header">Upcoming tracks...</h6>
