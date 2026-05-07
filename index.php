@@ -80,11 +80,8 @@ if (!is_authenticated() || isset($_GET['add_account'])) {
             <i class="bi bi-music-note-beamed"></i>
           </div>
         </div>
-        <div class="sc-info-right">
-          <div class="sc-info-box sc-scrollable" id="track-info">
-            <p class="sc-empty">No track playing</p>
-          </div>
-          <canvas id="viz-canvas"></canvas>
+        <div class="sc-info-box sc-scrollable" id="track-info">
+          <p class="sc-empty">No track playing</p>
         </div>
       </div>
 
@@ -129,6 +126,9 @@ if (!is_authenticated() || isset($_GET['add_account'])) {
     </aside>
 
   </div><!-- /.sc-main-area -->
+
+  <!-- ── VISUALISER (full width) ──────────────────────── -->
+  <canvas id="viz-canvas"></canvas>
 
   <!-- ── HISTORY BAR (full width) ─────────────────────── -->
   <div class="sc-history-bar">

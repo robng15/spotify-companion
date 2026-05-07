@@ -497,9 +497,10 @@ el.playlistSearch.addEventListener('input', () => {
 });
 
 // ── Beat visualiser ───────────────────────────────────────────────────────────
-const vizCtx   = el.vizCanvas.getContext('2d');
-const VIZ_BARS = 40;
-const vizBars  = new Float32Array(VIZ_BARS);
+const vizCtx    = el.vizCanvas.getContext('2d');
+const VIZ_BARS  = 48;
+const vizBars   = new Float32Array(VIZ_BARS);   // rendered heights (lerped)
+const vizTarget = new Float32Array(VIZ_BARS);   // beat-triggered targets
 
 let vizBeats    = [];
 let vizBeatIdx  = 0;
@@ -539,12 +540,12 @@ async function vizLoadBeats(trackId) {
 }
 
 function vizTriggerBeat(confidence) {
-  const intensity = 0.5 + confidence * 0.5;
+  const intensity = 0.55 + confidence * 0.45;
   const raw = Array.from({length: VIZ_BARS}, () => Math.random());
   for (let i = 0; i < VIZ_BARS; i++) {
     const l = raw[Math.max(0, i - 1)];
     const r = raw[Math.min(VIZ_BARS - 1, i + 1)];
-    vizBars[i] = Math.max(vizBars[i], (l * 0.25 + raw[i] * 0.5 + r * 0.25) * intensity);
+    vizTarget[i] = Math.max(vizTarget[i], (l * 0.25 + raw[i] * 0.5 + r * 0.25) * intensity);
   }
 }
 
@@ -570,17 +571,19 @@ function vizLoop() {
 
   if (W && H) {
     const barW = W / VIZ_BARS;
-    const gap  = Math.max(1, barW * 0.15);
+    const gap  = Math.max(1, barW * 0.18);
     const grad = vizCtx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0,   'rgba(245,162,0,1)');
-    grad.addColorStop(0.5, 'rgba(210,35,42,0.85)');
-    grad.addColorStop(1,   'rgba(120,10,15,0.6)');
+    grad.addColorStop(0,   'rgba(245,162,0,0.9)');
+    grad.addColorStop(0.5, 'rgba(210,35,42,0.75)');
+    grad.addColorStop(1,   'rgba(100,8,12,0.5)');
     vizCtx.fillStyle = grad;
 
     for (let i = 0; i < VIZ_BARS; i++) {
-      const h = vizBars[i] * H * 0.95;
+      // Smooth rise toward target, slow exponential decay of target
+      vizBars[i]  += (vizTarget[i] - vizBars[i]) * 0.18;
+      vizTarget[i] *= 0.94;
+      const h = vizBars[i] * H * 0.92;
       if (h >= 1) vizCtx.fillRect(i * barW + gap / 2, H - h, barW - gap, h);
-      vizBars[i] = Math.max(0, vizBars[i] - 0.028);
     }
   }
 
