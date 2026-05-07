@@ -103,26 +103,30 @@ if ($artist_mbid) {
             ];
         }
 
-        // Wikipedia URL
+        // Wikipedia title — prefer explicit URL relation, fall back to artist name
         $wiki_title = null;
         foreach ($artist_data['relations'] ?? [] as $rel) {
             if (($rel['target-type'] ?? '') !== 'url') continue;
             $url = $rel['url']['resource'] ?? '';
-            if (preg_match('|https?://en\.wikipedia\.org/wiki/(.+)|', $url, $m)) {
+            if (preg_match('|https?://en\.wikipedia\.org/wiki/([^#?]+)|', $url, $m)) {
                 $wiki_title = urldecode($m[1]);
                 break;
             }
+        }
+        if (!$wiki_title && !empty($artist_data['name'])) {
+            $wiki_title = $artist_data['name'];
         }
 
         // Fetch Wikipedia summary (bio + thumbnail)
         if ($wiki_title) {
             sleep(1);
             $wiki = mb_get(
-                'https://en.wikipedia.org/api/rest_v1/page/summary/' . urlencode($wiki_title),
+                'https://en.wikipedia.org/api/rest_v1/page/summary/' . rawurlencode($wiki_title),
                 $ua
             );
-            if ($wiki) {
-                $wiki_bio   = $wiki['extract']            ?? null;
+            // Discard if Wikipedia redirected to a disambiguation page
+            if ($wiki && isset($wiki['extract']) && ($wiki['type'] ?? '') !== 'disambiguation') {
+                $wiki_bio   = $wiki['extract']             ?? null;
                 $wiki_image = $wiki['thumbnail']['source'] ?? null;
             }
         }
