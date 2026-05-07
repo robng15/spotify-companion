@@ -571,15 +571,15 @@ function vizLoop() {
     const barW = W / VIZ_BARS;
     const gap  = Math.max(1, barW * 0.12);
     const grad = vizCtx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0,   'rgba(245,162,0,0.9)');
-    grad.addColorStop(0.6, 'rgba(245,162,0,0.4)');
-    grad.addColorStop(1,   'rgba(245,162,0,0.0)');
+    grad.addColorStop(0,   'rgba(245,162,0,0.0)');
+    grad.addColorStop(0.4, 'rgba(245,162,0,0.5)');
+    grad.addColorStop(1,   'rgba(245,162,0,0.9)');
     vizCtx.fillStyle = grad;
 
     for (let i = 0; i < VIZ_BARS; i++) {
       const h = vizBars[i] * H * 0.88;
       if (h >= 1) vizCtx.fillRect(i * barW + gap / 2, H - h, barW - gap, h);
-      vizBars[i] = Math.max(0, vizBars[i] - 0.036);
+      vizBars[i] = Math.max(0.015, vizBars[i] - 0.036);
     }
   }
 
