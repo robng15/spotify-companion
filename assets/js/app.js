@@ -133,11 +133,10 @@ function applyNowPlaying(d) {
   // Track info
   renderTrackInfo(d);
 
-  // New track — update beat tempo + MusicBrainz
+  // New track — MusicBrainz lookup
   if (d.track_id && d.track_id !== state.trackId) {
     state.trackId = d.track_id;
     state.isrc    = d.isrc ?? null;
-    vizSetTempo(state.tempo);
     fetchMusicBrainz();
   }
 }
@@ -486,75 +485,6 @@ el.playlistSearch.addEventListener('input', () => {
     item.style.display = !q || name.includes(q) ? '' : 'none';
   });
 });
-
-// ── Beat visualiser ───────────────────────────────────────────────────────────
-const vizCanvas = document.getElementById('viz-canvas');
-const vizCtx    = vizCanvas.getContext('2d');
-const VIZ_BARS  = 36;
-const vizBars   = new Float32Array(VIZ_BARS);
-
-let vizBeatInterval = 0.5;   // seconds between beats (120 BPM default)
-let vizLastBeatWall = 0;     // performance.now()/1000 at last beat trigger
-
-function vizSetTempo(tempo) {
-  vizBeatInterval = 60 / (tempo || 120);
-  vizLastBeatWall = 0;  // reset phase on track change
-}
-
-function vizTriggerBeat() {
-  const intensity = 0.5 + Math.random() * 0.5;
-  const raw = Array.from({length: VIZ_BARS}, () => Math.random());
-  for (let i = 0; i < VIZ_BARS; i++) {
-    const l = raw[Math.max(0, i - 1)];
-    const r = raw[Math.min(VIZ_BARS - 1, i + 1)];
-    vizBars[i] = (l * 0.2 + raw[i] * 0.6 + r * 0.2) * intensity;
-  }
-}
-
-function vizLoop() {
-  // Size canvas to its CSS dimensions
-  const W = vizCanvas.offsetWidth;
-  const H = vizCanvas.offsetHeight;
-  if (vizCanvas.width !== W || vizCanvas.height !== H) {
-    vizCanvas.width  = W;
-    vizCanvas.height = H;
-  }
-
-  vizCtx.clearRect(0, 0, W, H);
-
-  // Fire a beat whenever the wall-clock interval elapses
-  if (state.isPlaying) {
-    const nowSec = performance.now() / 1000;
-    if (vizLastBeatWall === 0 || nowSec - vizLastBeatWall > vizBeatInterval * 3) {
-      vizLastBeatWall = nowSec;  // initialise or re-sync after long pause
-    }
-    while (nowSec - vizLastBeatWall >= vizBeatInterval) {
-      vizTriggerBeat();
-      vizLastBeatWall += vizBeatInterval;
-    }
-  }
-
-  // Draw bars (one shared gradient per frame)
-  if (W && H) {
-    const barW = W / VIZ_BARS;
-    const gap  = Math.max(1, barW * 0.12);
-    const grad = vizCtx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0,   'rgba(245,162,0,0.0)');
-    grad.addColorStop(0.4, 'rgba(245,162,0,0.5)');
-    grad.addColorStop(1,   'rgba(245,162,0,0.9)');
-    vizCtx.fillStyle = grad;
-
-    for (let i = 0; i < VIZ_BARS; i++) {
-      const h = vizBars[i] * H * 0.88;
-      if (h >= 1) vizCtx.fillRect(i * barW + gap / 2, H - h, barW - gap, h);
-      vizBars[i] = Math.max(0.015, vizBars[i] - 0.036);
-    }
-  }
-
-  requestAnimationFrame(vizLoop);
-}
-
-vizLoop();
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 pollNowPlaying();

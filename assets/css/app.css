@@ -186,22 +186,6 @@ body {
   position: relative;
 }
 
-/* Beat visualiser canvas — sits behind all centre content */
-#viz-canvas {
-  position: absolute;
-  inset: 0;
-  display: block;
-  pointer-events: none;
-  opacity: 0.45;
-  z-index: 0;
-}
-
-/* Keep all centre content above the canvas */
-.sc-centre > :not(#viz-canvas) {
-  position: relative;
-  z-index: 1;
-}
-
 /* Search */
 .sc-search-row {
   display: flex;

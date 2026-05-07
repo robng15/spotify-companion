@@ -50,8 +50,6 @@ if (!is_authenticated()) {
 
     <!-- ── CENTRE PANEL ─────────────────────────────────── -->
     <main class="sc-centre">
-      <canvas id="viz-canvas"></canvas>
-
       <div class="sc-search-row">
         <div class="sc-search-wrap">
           <i class="bi bi-search sc-search-icon"></i>
