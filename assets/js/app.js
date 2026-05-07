@@ -203,7 +203,7 @@ function renderQueueList(container, tracks, emptyMsg) {
     container.innerHTML = `<p class="sc-empty">${esc(emptyMsg)}</p>`;
     return;
   }
-  container.innerHTML = tracks.map((t, i) => `
+  container.innerHTML = tracks.map(t => `
     <div class="sc-track-item">
       ${t.artwork_url
         ? `<img class="sc-track-thumb" src="${esc(t.artwork_url)}" alt="" loading="lazy">`
@@ -212,19 +212,23 @@ function renderQueueList(container, tracks, emptyMsg) {
         <div class="sc-track-name">${esc(t.track_name)}</div>
         <div class="sc-track-artist">${esc(t.artist)}</div>
       </div>
-      <button class="sc-track-remove" data-idx="${i}" title="Remove from queue"><i class="bi bi-x-lg"></i></button>
+      ${t.uri && state.contextUri
+        ? `<button class="sc-track-play" data-uri="${escAttr(t.uri)}" title="Jump to this track"><i class="bi bi-music-note"></i></button>`
+        : ''}
     </div>`
   ).join('');
 
-  container.querySelectorAll('.sc-track-remove').forEach(btn => {
+  container.querySelectorAll('.sc-track-play').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const idx = parseInt(btn.dataset.idx, 10);
-      btn.closest('.sc-track-item').remove();
-      if (idx === 0) {
-        // First item is next-to-play — skip past it
-        await apiPost('controls.php', { action: 'next' });
-        setTimeout(pollQueue, 1200);
-      }
+      const uri = btn.dataset.uri;
+      if (!uri || !state.contextUri) return;
+      await apiPost('controls.php', {
+        action: 'skip_to_track',
+        context_uri: state.contextUri,
+        track_uri: uri,
+      });
+      setTimeout(pollNowPlaying, 600);
+      setTimeout(pollQueue, 1000);
     });
   });
 }

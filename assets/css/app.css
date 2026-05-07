@@ -133,12 +133,12 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Remove-from-playlist button on queue items */
-.sc-track-remove {
+/* Jump-to-track button on queue items */
+.sc-track-play {
   background: none;
   border: none;
-  color: rgba(220, 60, 60, 0.65);
-  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.85rem;
   padding: 2px 3px;
   cursor: pointer;
   flex-shrink: 0;
@@ -149,9 +149,9 @@ body {
   transition: color 0.15s, background 0.15s;
 }
 
-.sc-track-remove:hover {
-  color: #ff4444;
-  background: rgba(255, 60, 60, 0.12);
+.sc-track-play:hover {
+  color: var(--accent);
+  background: rgba(245, 162, 0, 0.12);
 }
 
 .sc-btn-clear {
