@@ -39,8 +39,8 @@ body {
 
 /* ── Left panel ───────────────────────────────────────────────────────────── */
 .sc-left {
-  width: 230px;
-  min-width: 200px;
+  width: 265px;
+  min-width: 230px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -277,7 +277,7 @@ body {
 
 /* Song title */
 .sc-song-title {
-  font-size: clamp(1.1rem, 2.2vw, 1.9rem);
+  font-size: clamp(2.2rem, 4.4vw, 3.8rem);
   font-weight: 700;
   line-height: 1.2;
   flex-shrink: 0;
@@ -348,8 +348,8 @@ body {
 
 /* ── Right panel ──────────────────────────────────────────────────────────── */
 .sc-right {
-  width: 220px;
-  min-width: 200px;
+  width: 253px;
+  min-width: 230px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -548,7 +548,7 @@ body {
 /* History items are fixed-width cards inside horizontal scroll */
 .sc-history-scroll .sc-track-item {
   flex-shrink: 0;
-  width: 160px;
+  width: 220px;
   padding: 3px 5px;
 }
 
