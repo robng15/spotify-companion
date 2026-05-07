@@ -519,9 +519,9 @@ async function vizLoadBeats(trackId) {
 
   if (data?.beats?.length) {
     vizBeats = data.beats;
-  } else if (state.tempo) {
-    // Fallback: synthesise beats from BPM when audio analysis is unavailable
-    const interval  = 60 / state.tempo;
+  } else {
+    // Fallback: synthesise beats from BPM (default 120 if audio features also unavailable)
+    const interval  = 60 / (state.tempo || 120);
     const durationS = (state.durationMs || 300000) / 1000;
     for (let t = 0; t < durationS; t += interval) {
       vizBeats.push({ start: +t.toFixed(3), confidence: 0.75 });
@@ -530,8 +530,8 @@ async function vizLoadBeats(trackId) {
 
   // Align index to current playback position
   const posSec = (vizLastMs + (performance.now() - vizLastWall)) / 1000;
-  vizBeatIdx = vizBeats.findIndex(b => b.start >= posSec);
-  if (vizBeatIdx < 0) vizBeatIdx = 0;
+  vizBeatIdx = vizBeats.findIndex(b => b.start >= posSec - 0.05);
+  if (vizBeatIdx < 0) vizBeatIdx = Math.max(0, vizBeats.length - 1);
 }
 
 function vizTriggerBeat(confidence) {
