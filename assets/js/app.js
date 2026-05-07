@@ -101,6 +101,7 @@ function applyNowPlaying(d) {
   state.durationMs = d.duration_ms ?? 0;
   if (!state.seekDragging) {
     state.progressMs = d.progress_ms ?? 0;
+    vizUpdateProgress(state.progressMs);
     el.progressBar.value = state.durationMs ? Math.round((state.progressMs / state.durationMs) * 1000) : 0;
     el.timeElapsed.textContent = msToTime(state.progressMs);
   }
@@ -131,10 +132,11 @@ function applyNowPlaying(d) {
   // Track info
   renderTrackInfo(d);
 
-  // New track — fetch MusicBrainz
+  // New track — fetch beats + MusicBrainz
   if (d.track_id && d.track_id !== state.trackId) {
     state.trackId = d.track_id;
     state.isrc    = d.isrc ?? null;
+    vizLoadBeats(d.track_id);
     fetchMusicBrainz();
   }
 }
@@ -483,6 +485,96 @@ el.playlistSearch.addEventListener('input', () => {
     item.style.display = !q || name.includes(q) ? '' : 'none';
   });
 });
+
+// ── Beat visualiser ───────────────────────────────────────────────────────────
+const vizCanvas = document.getElementById('viz-canvas');
+const vizCtx    = vizCanvas.getContext('2d');
+const VIZ_BARS  = 36;
+const vizBars   = new Float32Array(VIZ_BARS);
+
+let vizBeats         = [];
+let vizBeatIdx       = 0;
+let vizLastMs        = 0;
+let vizLastWall      = 0;   // performance.now() at last progress update
+
+function vizUpdateProgress(ms) {
+  const expectedMs = vizLastMs + (performance.now() - vizLastWall);
+  if (Math.abs(ms - expectedMs) > 1500) {
+    // Seek detected — jump beat index to new position
+    const posSec = ms / 1000;
+    vizBeatIdx = vizBeats.findIndex(b => b.start >= posSec);
+    if (vizBeatIdx < 0) vizBeatIdx = 0;
+  }
+  vizLastMs   = ms;
+  vizLastWall = performance.now();
+}
+
+async function vizLoadBeats(trackId) {
+  vizBeats   = [];
+  vizBeatIdx = 0;
+  const data = await apiGet(`audio-analysis.php?track_id=${encodeURIComponent(trackId)}`);
+  if (data?.beats?.length) {
+    vizBeats = data.beats;
+    // Align index to current position
+    const posSec = (vizLastMs + (performance.now() - vizLastWall)) / 1000;
+    vizBeatIdx = vizBeats.findIndex(b => b.start >= posSec);
+    if (vizBeatIdx < 0) vizBeatIdx = 0;
+  }
+}
+
+function vizTriggerBeat(confidence) {
+  const intensity = 0.45 + confidence * 0.55;
+  const raw = Array.from({length: VIZ_BARS}, () => Math.random());
+  for (let i = 0; i < VIZ_BARS; i++) {
+    const l = raw[Math.max(0, i - 1)];
+    const r = raw[Math.min(VIZ_BARS - 1, i + 1)];
+    vizBars[i] = (l * 0.2 + raw[i] * 0.6 + r * 0.2) * intensity;
+  }
+}
+
+function vizLoop() {
+  // Size canvas to its CSS dimensions
+  const W = vizCanvas.offsetWidth;
+  const H = vizCanvas.offsetHeight;
+  if (vizCanvas.width !== W || vizCanvas.height !== H) {
+    vizCanvas.width  = W;
+    vizCanvas.height = H;
+  }
+
+  vizCtx.clearRect(0, 0, W, H);
+
+  // Advance beat index and trigger on beat hits
+  if (vizBeats.length && state.isPlaying) {
+    const posSec = (vizLastMs + (performance.now() - vizLastWall)) / 1000;
+    while (vizBeatIdx < vizBeats.length) {
+      const beat = vizBeats[vizBeatIdx];
+      if (beat.start > posSec) break;
+      if (posSec - beat.start < 0.15) vizTriggerBeat(beat.confidence);
+      vizBeatIdx++;
+    }
+  }
+
+  // Draw bars (one shared gradient per frame for performance)
+  if (W && H) {
+    const barW = W / VIZ_BARS;
+    const gap  = Math.max(1, barW * 0.12);
+    const grad = vizCtx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0,   'rgba(245,162,0,0.9)');
+    grad.addColorStop(0.6, 'rgba(245,162,0,0.4)');
+    grad.addColorStop(1,   'rgba(245,162,0,0.0)');
+    vizCtx.fillStyle = grad;
+
+    for (let i = 0; i < VIZ_BARS; i++) {
+      const h = vizBars[i] * H * 0.88;
+      if (h >= 1) vizCtx.fillRect(i * barW + gap / 2, H - h, barW - gap, h);
+      vizBars[i] = Math.max(0, vizBars[i] - 0.036);
+    }
+  }
+
+  requestAnimationFrame(vizLoop);
+}
+
+vizLoop();
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 pollNowPlaying();
