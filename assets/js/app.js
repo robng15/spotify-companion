@@ -102,7 +102,6 @@ function applyNowPlaying(d) {
   state.durationMs = d.duration_ms ?? 0;
   if (!state.seekDragging) {
     state.progressMs = d.progress_ms ?? 0;
-    vizUpdateProgress(state.progressMs);
     el.progressBar.value = state.durationMs ? Math.round((state.progressMs / state.durationMs) * 1000) : 0;
     el.timeElapsed.textContent = msToTime(state.progressMs);
   }
@@ -134,11 +133,11 @@ function applyNowPlaying(d) {
   // Track info
   renderTrackInfo(d);
 
-  // New track — fetch beats + MusicBrainz
+  // New track — update beat tempo + MusicBrainz
   if (d.track_id && d.track_id !== state.trackId) {
     state.trackId = d.track_id;
     state.isrc    = d.isrc ?? null;
-    vizLoadBeats(d.track_id);
+    vizSetTempo(state.tempo);
     fetchMusicBrainz();
   }
 }
@@ -494,48 +493,16 @@ const vizCtx    = vizCanvas.getContext('2d');
 const VIZ_BARS  = 36;
 const vizBars   = new Float32Array(VIZ_BARS);
 
-let vizBeats         = [];
-let vizBeatIdx       = 0;
-let vizLastMs        = 0;
-let vizLastWall      = 0;   // performance.now() at last progress update
+let vizBeatInterval = 0.5;   // seconds between beats (120 BPM default)
+let vizLastBeatWall = 0;     // performance.now()/1000 at last beat trigger
 
-function vizUpdateProgress(ms) {
-  const expectedMs = vizLastMs + (performance.now() - vizLastWall);
-  if (Math.abs(ms - expectedMs) > 1500) {
-    // Seek detected — jump beat index to new position
-    const posSec = ms / 1000;
-    vizBeatIdx = vizBeats.findIndex(b => b.start >= posSec);
-    if (vizBeatIdx < 0) vizBeatIdx = 0;
-  }
-  vizLastMs   = ms;
-  vizLastWall = performance.now();
+function vizSetTempo(tempo) {
+  vizBeatInterval = 60 / (tempo || 120);
+  vizLastBeatWall = 0;  // reset phase on track change
 }
 
-async function vizLoadBeats(trackId) {
-  vizBeats   = [];
-  vizBeatIdx = 0;
-
-  const data = await apiGet(`audio-analysis.php?track_id=${encodeURIComponent(trackId)}`);
-
-  if (data?.beats?.length) {
-    vizBeats = data.beats;
-  } else {
-    // Fallback: synthesise beats from BPM (default 120 if audio features also unavailable)
-    const interval  = 60 / (state.tempo || 120);
-    const durationS = (state.durationMs || 300000) / 1000;
-    for (let t = 0; t < durationS; t += interval) {
-      vizBeats.push({ start: +t.toFixed(3), confidence: 0.75 });
-    }
-  }
-
-  // Align index to current playback position
-  const posSec = (vizLastMs + (performance.now() - vizLastWall)) / 1000;
-  vizBeatIdx = vizBeats.findIndex(b => b.start >= posSec - 0.05);
-  if (vizBeatIdx < 0) vizBeatIdx = Math.max(0, vizBeats.length - 1);
-}
-
-function vizTriggerBeat(confidence) {
-  const intensity = 0.45 + confidence * 0.55;
+function vizTriggerBeat() {
+  const intensity = 0.5 + Math.random() * 0.5;
   const raw = Array.from({length: VIZ_BARS}, () => Math.random());
   for (let i = 0; i < VIZ_BARS; i++) {
     const l = raw[Math.max(0, i - 1)];
@@ -555,18 +522,19 @@ function vizLoop() {
 
   vizCtx.clearRect(0, 0, W, H);
 
-  // Advance beat index and trigger on beat hits
-  if (vizBeats.length && state.isPlaying) {
-    const posSec = (vizLastMs + (performance.now() - vizLastWall)) / 1000;
-    while (vizBeatIdx < vizBeats.length) {
-      const beat = vizBeats[vizBeatIdx];
-      if (beat.start > posSec) break;
-      if (posSec - beat.start < 0.15) vizTriggerBeat(beat.confidence);
-      vizBeatIdx++;
+  // Fire a beat whenever the wall-clock interval elapses
+  if (state.isPlaying) {
+    const nowSec = performance.now() / 1000;
+    if (vizLastBeatWall === 0 || nowSec - vizLastBeatWall > vizBeatInterval * 3) {
+      vizLastBeatWall = nowSec;  // initialise or re-sync after long pause
+    }
+    while (nowSec - vizLastBeatWall >= vizBeatInterval) {
+      vizTriggerBeat();
+      vizLastBeatWall += vizBeatInterval;
     }
   }
 
-  // Draw bars (one shared gradient per frame for performance)
+  // Draw bars (one shared gradient per frame)
   if (W && H) {
     const barW = W / VIZ_BARS;
     const gap  = Math.max(1, barW * 0.12);
