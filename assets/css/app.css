@@ -474,6 +474,7 @@ body {
   background: var(--panel);
   border-left: 1px solid var(--border);
   padding: 14px 12px 12px;
+  overflow: hidden;
 }
 
 .sc-playlist-section {
@@ -529,7 +530,7 @@ body {
 .sc-time {
   font-size: 0.68rem;
   color: var(--muted);
-  min-width: 28px;
+  min-width: 36px;
   text-align: center;
   flex-shrink: 0;
 }
