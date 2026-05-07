@@ -43,6 +43,7 @@ const state = {
   repeat:      'off',        // off | context | track
   seekDragging: false,
   contextUri:  null,         // spotify:playlist:... or null
+  tempo:       null,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -126,8 +127,9 @@ function applyNowPlaying(d) {
     state.volumeInit = true;
   }
 
-  // Track context (playlist URI for remove-from-playlist)
+  // Track context and tempo
   state.contextUri = d.context_uri ?? null;
+  state.tempo      = d.tempo ?? null;
 
   // Track info
   renderTrackInfo(d);
@@ -512,14 +514,24 @@ function vizUpdateProgress(ms) {
 async function vizLoadBeats(trackId) {
   vizBeats   = [];
   vizBeatIdx = 0;
+
   const data = await apiGet(`audio-analysis.php?track_id=${encodeURIComponent(trackId)}`);
+
   if (data?.beats?.length) {
     vizBeats = data.beats;
-    // Align index to current position
-    const posSec = (vizLastMs + (performance.now() - vizLastWall)) / 1000;
-    vizBeatIdx = vizBeats.findIndex(b => b.start >= posSec);
-    if (vizBeatIdx < 0) vizBeatIdx = 0;
+  } else if (state.tempo) {
+    // Fallback: synthesise beats from BPM when audio analysis is unavailable
+    const interval  = 60 / state.tempo;
+    const durationS = (state.durationMs || 300000) / 1000;
+    for (let t = 0; t < durationS; t += interval) {
+      vizBeats.push({ start: +t.toFixed(3), confidence: 0.75 });
+    }
   }
+
+  // Align index to current playback position
+  const posSec = (vizLastMs + (performance.now() - vizLastWall)) / 1000;
+  vizBeatIdx = vizBeats.findIndex(b => b.start >= posSec);
+  if (vizBeatIdx < 0) vizBeatIdx = 0;
 }
 
 function vizTriggerBeat(confidence) {
