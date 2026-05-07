@@ -30,7 +30,19 @@ if (empty($data['access_token'])) {
     die('Token exchange failed: <pre>' . htmlspecialchars(json_encode($data, JSON_PRETTY_PRINT)) . '</pre>');
 }
 
-save_tokens($data['access_token'], $data['refresh_token'], $data['expires_in']);
+// Fetch Spotify profile to get a stable user ID and display name
+$ch = curl_init('https://api.spotify.com/v1/me');
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $data['access_token']],
+]);
+$me = json_decode(curl_exec($ch), true) ?? [];
+curl_close($ch);
+
+$user_id      = $me['id']           ?? ('user_' . uniqid());
+$display_name = $me['display_name'] ?? $user_id;
+
+save_tokens($data['access_token'], $data['refresh_token'], $data['expires_in'], $user_id, $display_name);
 
 header('Location: /');
 exit;

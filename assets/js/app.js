@@ -28,6 +28,10 @@ const el = {
   ctrlLoop:        document.getElementById('ctrl-loop'),
   ctrlShuffle:     document.getElementById('ctrl-shuffle'),
   ctrlMute:        document.getElementById('ctrl-mute'),
+  bgArtwork:       document.getElementById('bg-artwork'),
+  userActiveName:  document.getElementById('user-active-name'),
+  userSwitchBtn:   document.getElementById('user-switch-btn'),
+  userPopup:       document.getElementById('user-popup'),
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -94,6 +98,7 @@ function applyNowPlaying(d) {
     el.artwork.src = d.artwork_url;
     el.artwork.classList.add('loaded');
     el.artworkPH.style.display = 'none';
+    el.bgArtwork.src = d.artwork_url;
   } else {
     el.artwork.classList.remove('loaded');
     el.artworkPH.style.display = 'flex';
@@ -487,7 +492,45 @@ el.playlistSearch.addEventListener('input', () => {
   });
 });
 
+// ── User switcher ─────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const data = await apiGet('users.php');
+  if (!data) return;
+  const active = data.users.find(u => u.user_id === data.active);
+  el.userActiveName.textContent = active?.display_name ?? '—';
+
+  el.userPopup.innerHTML = data.users.map(u => `
+    <div class="sc-user-popup-item ${u.user_id === data.active ? 'active' : ''}"
+         data-uid="${esc(u.user_id)}">
+      <i class="bi bi-person-circle"></i>
+      ${esc(u.display_name ?? u.user_id)}
+    </div>`).join('');
+
+  el.userPopup.querySelectorAll('.sc-user-popup-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      await apiPost('users.php', { user_id: item.dataset.uid });
+      el.userPopup.classList.remove('open');
+      // Reset track state so now-playing reloads fresh for new user
+      state.trackId = null;
+      loadUsers();
+      pollNowPlaying();
+    });
+  });
+}
+
+el.userSwitchBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  el.userPopup.classList.toggle('open');
+});
+
+document.addEventListener('click', e => {
+  if (!el.userPopup.contains(e.target) && e.target !== el.userSwitchBtn) {
+    el.userPopup.classList.remove('open');
+  }
+});
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
+loadUsers();
 pollNowPlaying();
 pollQueue();
 pollHistory();

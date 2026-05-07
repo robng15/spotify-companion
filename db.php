@@ -14,12 +14,19 @@ function get_db(): PDO {
 }
 
 function init_schema(PDO $db): void {
+    // Migrate single-user tokens table to multi-user if needed
+    $cols = array_column($db->query("PRAGMA table_info(tokens)")->fetchAll(), 'name');
+    if (!empty($cols) && !in_array('user_id', $cols)) {
+        $db->exec("DROP TABLE tokens");
+    }
+
     $db->exec("
         CREATE TABLE IF NOT EXISTS tokens (
-            id            INTEGER PRIMARY KEY CHECK (id = 1),
-            access_token  TEXT    NOT NULL,
-            refresh_token TEXT    NOT NULL,
-            expires_at    TEXT    NOT NULL
+            user_id       TEXT PRIMARY KEY,
+            display_name  TEXT,
+            access_token  TEXT NOT NULL,
+            refresh_token TEXT NOT NULL,
+            expires_at    TEXT NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS history (

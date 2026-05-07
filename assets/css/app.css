@@ -27,6 +27,21 @@ body {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  position: relative;
+}
+
+/* Background artwork — full bleed, fades top-to-bottom */
+#bg-artwork {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  opacity: 0.15;
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+  pointer-events: none;
 }
 
 /* ── Main area (3 columns) ────────────────────────────────────────────────── */
@@ -35,6 +50,8 @@ body {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Left panel ───────────────────────────────────────────────────────────── */
@@ -52,6 +69,7 @@ body {
 
 .sc-name-slot {
   flex-shrink: 0;
+  padding-bottom:20px;
 }
 
 .sc-logo {
@@ -59,6 +77,89 @@ body {
   height: auto;
   display: block;
 }
+
+/* User switcher strip */
+.sc-user-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.sc-user-icon {
+  font-size: 1rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.sc-user-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-user-btns {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.sc-btn-user {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 3px 5px;
+  cursor: pointer;
+  border-radius: 4px;
+  text-decoration: none;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.sc-btn-user:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.08);
+}
+
+.sc-user-popup {
+  display: none;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: #1a1a45;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  z-index: 300;
+  overflow: hidden;
+}
+
+.sc-user-popup.open { display: block; }
+
+.sc-user-popup-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.sc-user-popup-item:hover { background: rgba(255,255,255,0.07); }
+
+.sc-user-popup-item.active { color: var(--accent); }
 
 .sc-section {
   display: flex;
@@ -505,6 +606,8 @@ body {
   display: flex;
   align-items: stretch;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 .sc-history-label {
@@ -550,6 +653,7 @@ body {
   flex-shrink: 0;
   width: 220px;
   padding: 3px 5px;
+  border:1px solid #0a0a38;
 }
 
 .sc-history-scroll .sc-track-name {

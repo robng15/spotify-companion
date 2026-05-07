@@ -2,7 +2,7 @@
 session_start();
 require_once __DIR__ . '/spotify.php';
 
-if (!is_authenticated()) {
+if (!is_authenticated() || isset($_GET['add_account'])) {
     $state = bin2hex(random_bytes(16));
     setcookie('oauth_state', $state, [
         'expires'  => time() + 600,
@@ -29,6 +29,8 @@ if (!is_authenticated()) {
 
 <div class="sc-app">
 
+  <img id="bg-artwork" src="" alt="" aria-hidden="true">
+
   <!-- ── MAIN AREA (3 columns) ──────────────────────────── -->
   <div class="sc-main-area">
 
@@ -37,6 +39,16 @@ if (!is_authenticated()) {
 
       <div class="sc-name-slot" id="name-slot">
         <img src="/assets/SVG/winchester-fm-logo.svg" alt="Winchester FM" class="sc-logo">
+      </div>
+
+      <div class="sc-user-strip" id="user-strip">
+        <i class="bi bi-person-circle sc-user-icon"></i>
+        <span class="sc-user-name" id="user-active-name">—</span>
+        <div class="sc-user-btns">
+          <button class="sc-btn-user" id="user-switch-btn" title="Switch account"><i class="bi bi-people-fill"></i></button>
+          <a class="sc-btn-user" href="/?add_account=1" title="Add account"><i class="bi bi-person-plus-fill"></i></a>
+        </div>
+        <div class="sc-user-popup" id="user-popup"></div>
       </div>
 
       <section class="sc-section">
