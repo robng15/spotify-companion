@@ -14,7 +14,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background: var(--navy);
+  background: linear-gradient(to bottom, var(--navy) 70%, #000 100%);
   color: var(--text);
   font-family: system-ui, -apple-system, sans-serif;
   height: 100vh;
