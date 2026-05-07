@@ -428,11 +428,19 @@ body {
   color: var(--muted);
 }
 
+/* Right column: info box + visualiser stacked */
+.sc-info-right {
+  width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: flex-start;
+}
+
 /* Track info box */
 .sc-info-box {
-  width: 300px;
-  flex-shrink: 0;
-  align-self: flex-start;
+  width: 100%;
   max-height: 420px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -440,6 +448,16 @@ body {
   font-size: 0.8rem;
   line-height: 1.65;
   overflow-y: auto;
+}
+
+/* Beat visualiser canvas */
+#viz-canvas {
+  width: 100%;
+  height: 110px;
+  display: block;
+  border-radius: var(--radius);
+  background: rgba(0,0,0,0.35);
+  flex-shrink: 0;
 }
 
 .sc-info-label { color: var(--muted); }

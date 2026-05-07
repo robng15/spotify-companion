@@ -80,8 +80,11 @@ if (!is_authenticated() || isset($_GET['add_account'])) {
             <i class="bi bi-music-note-beamed"></i>
           </div>
         </div>
-        <div class="sc-info-box sc-scrollable" id="track-info">
-          <p class="sc-empty">No track playing</p>
+        <div class="sc-info-right">
+          <div class="sc-info-box sc-scrollable" id="track-info">
+            <p class="sc-empty">No track playing</p>
+          </div>
+          <canvas id="viz-canvas"></canvas>
         </div>
       </div>
 

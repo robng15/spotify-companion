@@ -29,6 +29,7 @@ const el = {
   ctrlShuffle:     document.getElementById('ctrl-shuffle'),
   ctrlMute:        document.getElementById('ctrl-mute'),
   bgArtwork:       document.getElementById('bg-artwork'),
+  vizCanvas:       document.getElementById('viz-canvas'),
   userActiveName:  document.getElementById('user-active-name'),
   userSwitchBtn:   document.getElementById('user-switch-btn'),
   userPopup:       document.getElementById('user-popup'),
@@ -109,6 +110,7 @@ function applyNowPlaying(d) {
   state.durationMs = d.duration_ms ?? 0;
   if (!state.seekDragging) {
     state.progressMs = d.progress_ms ?? 0;
+    vizUpdateProgress(state.progressMs);
     el.progressBar.value = state.durationMs ? Math.round((state.progressMs / state.durationMs) * 1000) : 0;
     el.timeElapsed.textContent = msToTime(state.progressMs);
   }
@@ -140,10 +142,11 @@ function applyNowPlaying(d) {
   // Track info
   renderTrackInfo(d);
 
-  // New track — MusicBrainz lookup
+  // New track — beats + MusicBrainz
   if (d.track_id && d.track_id !== state.trackId) {
     state.trackId = d.track_id;
     state.isrc    = d.isrc ?? null;
+    vizLoadBeats(d.track_id);
     fetchMusicBrainz();
   }
 }
@@ -492,6 +495,99 @@ el.playlistSearch.addEventListener('input', () => {
     item.style.display = !q || name.includes(q) ? '' : 'none';
   });
 });
+
+// ── Beat visualiser ───────────────────────────────────────────────────────────
+const vizCtx   = el.vizCanvas.getContext('2d');
+const VIZ_BARS = 40;
+const vizBars  = new Float32Array(VIZ_BARS);
+
+let vizBeats    = [];
+let vizBeatIdx  = 0;
+let vizLastMs   = 0;
+let vizLastWall = 0;
+
+function vizUpdateProgress(ms) {
+  const expected = vizLastMs + (performance.now() - vizLastWall);
+  if (Math.abs(ms - expected) > 1500) {
+    const posSec = ms / 1000;
+    vizBeatIdx = vizBeats.findIndex(b => b.start >= posSec);
+    if (vizBeatIdx < 0) vizBeatIdx = 0;
+  }
+  vizLastMs   = ms;
+  vizLastWall = performance.now();
+}
+
+async function vizLoadBeats(trackId) {
+  vizBeats   = [];
+  vizBeatIdx = 0;
+
+  const data = await apiGet(`audio-analysis.php?track_id=${encodeURIComponent(trackId)}`);
+
+  if (data?.beats?.length) {
+    vizBeats = data.beats;
+  } else {
+    const interval = 60 / (state.tempo || 120);
+    const duration = (state.durationMs || 300000) / 1000;
+    for (let t = 0; t < duration; t += interval) {
+      vizBeats.push({ start: +t.toFixed(3), confidence: 0.8 });
+    }
+  }
+
+  const posSec = (vizLastMs + (performance.now() - vizLastWall)) / 1000;
+  vizBeatIdx = vizBeats.findIndex(b => b.start >= posSec);
+  if (vizBeatIdx < 0) vizBeatIdx = 0;
+}
+
+function vizTriggerBeat(confidence) {
+  const intensity = 0.5 + confidence * 0.5;
+  const raw = Array.from({length: VIZ_BARS}, () => Math.random());
+  for (let i = 0; i < VIZ_BARS; i++) {
+    const l = raw[Math.max(0, i - 1)];
+    const r = raw[Math.min(VIZ_BARS - 1, i + 1)];
+    vizBars[i] = Math.max(vizBars[i], (l * 0.25 + raw[i] * 0.5 + r * 0.25) * intensity);
+  }
+}
+
+function vizLoop() {
+  const W = el.vizCanvas.offsetWidth;
+  const H = el.vizCanvas.offsetHeight;
+  if (el.vizCanvas.width !== W || el.vizCanvas.height !== H) {
+    el.vizCanvas.width  = W;
+    el.vizCanvas.height = H;
+  }
+
+  vizCtx.clearRect(0, 0, W, H);
+
+  if (vizBeats.length && state.isPlaying) {
+    const posSec = (vizLastMs + (performance.now() - vizLastWall)) / 1000;
+    while (vizBeatIdx < vizBeats.length) {
+      const beat = vizBeats[vizBeatIdx];
+      if (beat.start > posSec) break;
+      if (posSec - beat.start < 0.15) vizTriggerBeat(beat.confidence);
+      vizBeatIdx++;
+    }
+  }
+
+  if (W && H) {
+    const barW = W / VIZ_BARS;
+    const gap  = Math.max(1, barW * 0.15);
+    const grad = vizCtx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0,   'rgba(245,162,0,1)');
+    grad.addColorStop(0.5, 'rgba(210,35,42,0.85)');
+    grad.addColorStop(1,   'rgba(120,10,15,0.6)');
+    vizCtx.fillStyle = grad;
+
+    for (let i = 0; i < VIZ_BARS; i++) {
+      const h = vizBars[i] * H * 0.95;
+      if (h >= 1) vizCtx.fillRect(i * barW + gap / 2, H - h, barW - gap, h);
+      vizBars[i] = Math.max(0, vizBars[i] - 0.028);
+    }
+  }
+
+  requestAnimationFrame(vizLoop);
+}
+
+vizLoop();
 
 // ── User switcher ─────────────────────────────────────────────────────────────
 async function loadUsers() {
