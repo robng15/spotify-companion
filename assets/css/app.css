@@ -56,8 +56,8 @@ body {
 
 /* ── Left panel ───────────────────────────────────────────────────────────── */
 .sc-left {
-  width: 265px;
-  min-width: 230px;
+  width: 305px;
+  min-width: 265px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -466,8 +466,8 @@ body {
 
 /* ── Right panel ──────────────────────────────────────────────────────────── */
 .sc-right {
-  width: 253px;
-  min-width: 230px;
+  width: 291px;
+  min-width: 265px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
