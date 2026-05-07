@@ -538,6 +538,7 @@ body {
 /* Shared range style */
 .sc-range {
   flex: 1;
+  min-width: 0;
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
