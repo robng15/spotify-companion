@@ -245,7 +245,9 @@ function renderHistoryList(tracks) {
     el.historyList.innerHTML = '<p class="sc-empty sc-history-empty">No history yet</p>';
     return;
   }
-  el.historyList.innerHTML = tracks.map(t => `
+  el.historyList.innerHTML = tracks.map(t => {
+    const uri = t.track_id ? `spotify:track:${t.track_id}` : null;
+    return `
     <div class="sc-track-item">
       ${t.artwork_url
         ? `<img class="sc-track-thumb" src="${esc(t.artwork_url)}" alt="" loading="lazy">`
@@ -254,8 +256,25 @@ function renderHistoryList(tracks) {
         <div class="sc-track-name">${esc(t.track_name)}</div>
         <div class="sc-track-artist">${esc(t.artist)}</div>
       </div>
-    </div>`
-  ).join('');
+      ${uri && state.contextUri
+        ? `<button class="sc-track-play" data-uri="${escAttr(uri)}" title="Jump to this track"><i class="bi bi-music-note"></i></button>`
+        : ''}
+    </div>`;
+  }).join('');
+
+  el.historyList.querySelectorAll('.sc-track-play').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const uri = btn.dataset.uri;
+      if (!uri || !state.contextUri) return;
+      await apiPost('controls.php', {
+        action: 'skip_to_track',
+        context_uri: state.contextUri,
+        track_uri: uri,
+      });
+      setTimeout(pollNowPlaying, 600);
+      setTimeout(pollQueue, 1000);
+    });
+  });
 }
 
 el.clearHistory.addEventListener('click', async () => {
