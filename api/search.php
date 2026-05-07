@@ -11,10 +11,9 @@ if ($q === '') {
 }
 
 $data = spotify_api('GET', '/search', [
-    'q'      => $q,
-    'type'   => 'track',
-    'limit'  => 12,
-    'market' => 'from_token',
+    'q'     => $q,
+    'type'  => 'track',
+    'limit' => 12,
 ]);
 
 if (empty($data['tracks']['items'])) {
