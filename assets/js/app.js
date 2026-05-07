@@ -90,8 +90,9 @@ async function pollNowPlaying() {
 
 function applyNowPlaying(d) {
   // Title
-  el.songTitle.textContent = d.artists && d.track_name
-    ? `${d.artists}: ${d.track_name}` : (d.track_name ?? '—');
+  el.songTitle.innerHTML = d.artists && d.track_name
+    ? `<span class="sc-song-artist">${esc(d.artists)}</span>: ${esc(d.track_name)}`
+    : esc(d.track_name ?? '—');
 
   // Artwork
   if (d.artwork_url) {

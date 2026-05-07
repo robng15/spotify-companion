@@ -326,7 +326,7 @@ body {
 .sc-search-input::placeholder { color: var(--muted); }
 
 .sc-btn-arrow {
-  background: #5865f2;
+  background: #d2232a;
   border: none;
   color: #fff;
   font-size: 1.35rem;
@@ -337,7 +337,7 @@ body {
   transition: background 0.15s;
 }
 
-.sc-btn-arrow:hover { background: #4752c4; }
+.sc-btn-arrow:hover { background: #a81b21; }
 
 .sc-search-results {
   display: none;
@@ -382,6 +382,10 @@ body {
   font-weight: 700;
   line-height: 1.2;
   flex-shrink: 0;
+}
+
+.sc-song-artist {
+  color: #d2232a;
 }
 
 /* Artwork + info side-by-side row */
