@@ -13,11 +13,10 @@ const el = {
   searchInput:     document.getElementById('search-input'),
   searchSubmit:    document.getElementById('search-submit'),
   searchResults:   document.getElementById('search-results'),
-  queueNextBtn:    document.getElementById('queue-next-btn'),
-  queueTrackLabel: document.getElementById('queue-track-label'),
   playlistName:    document.getElementById('playlist-name'),
   changePlaylist:  document.getElementById('change-playlist-btn'),
   playlistList:    document.getElementById('playlist-list'),
+  playlistSearch:  document.getElementById('playlist-search-input'),
   timeElapsed:     document.getElementById('time-elapsed'),
   timeTotal:       document.getElementById('time-total'),
   progressBar:     document.getElementById('progress-bar'),
@@ -42,8 +41,8 @@ const state = {
   isMuted:     false,
   shuffle:     false,
   repeat:      'off',        // off | context | track
-  selectedUri: null,
   seekDragging: false,
+  contextUri:  null,         // spotify:playlist:... or null
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -126,6 +125,9 @@ function applyNowPlaying(d) {
     state.volumeInit = true;
   }
 
+  // Track context (playlist URI for remove-from-playlist)
+  state.contextUri = d.context_uri ?? null;
+
   // Track info
   renderTrackInfo(d);
 
@@ -156,8 +158,6 @@ function renderTrackInfo(d) {
     ['Valence',      d.valence      != null ? pct(d.valence)      : null],
     ['Acousticness', d.acousticness != null ? pct(d.acousticness) : null],
     ['Live perf.',   d.liveness     != null ? pct(d.liveness)     : null],
-    ['Explicit',     d.explicit     != null ? (d.explicit ? 'Yes' : 'No') : null],
-    ['Popularity',   d.popularity   != null ? `${d.popularity}/100` : null],
   ].filter(([, v]) => v != null);
 
   if (!rows.length) {
@@ -195,22 +195,53 @@ el.progressBar.addEventListener('change', () => {
 async function pollQueue() {
   const data = await apiGet('queue.php');
   if (!data?.queue) return;
-  renderTrackList(el.upcomingList, data.queue, 'Nothing queued');
+  renderQueueList(el.upcomingList, data.queue, 'Nothing queued');
+}
+
+function renderQueueList(container, tracks, emptyMsg) {
+  if (!tracks.length) {
+    container.innerHTML = `<p class="sc-empty">${esc(emptyMsg)}</p>`;
+    return;
+  }
+  container.innerHTML = tracks.map((t, i) => `
+    <div class="sc-track-item">
+      ${t.artwork_url
+        ? `<img class="sc-track-thumb" src="${esc(t.artwork_url)}" alt="" loading="lazy">`
+        : `<div class="sc-track-thumb-empty"></div>`}
+      <div class="sc-track-name-wrap">
+        <div class="sc-track-name">${esc(t.track_name)}</div>
+        <div class="sc-track-artist">${esc(t.artist)}</div>
+      </div>
+      <button class="sc-track-remove" data-idx="${i}" title="Remove from queue"><i class="bi bi-x-lg"></i></button>
+    </div>`
+  ).join('');
+
+  container.querySelectorAll('.sc-track-remove').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      btn.closest('.sc-track-item').remove();
+      if (idx === 0) {
+        // First item is next-to-play — skip past it
+        await apiPost('controls.php', { action: 'next' });
+        setTimeout(pollQueue, 1200);
+      }
+    });
+  });
 }
 
 // ── History ───────────────────────────────────────────────────────────────────
 async function pollHistory() {
   const data = await apiGet('history.php');
   if (!data?.history) return;
-  renderTrackList(el.historyList, data.history, 'No history yet');
+  renderHistoryList(data.history);
 }
 
-function renderTrackList(container, tracks, emptyMsg) {
+function renderHistoryList(tracks) {
   if (!tracks.length) {
-    container.innerHTML = `<p class="sc-empty">${esc(emptyMsg)}</p>`;
+    el.historyList.innerHTML = '<p class="sc-empty sc-history-empty">No history yet</p>';
     return;
   }
-  container.innerHTML = tracks.map(t => `
+  el.historyList.innerHTML = tracks.map(t => `
     <div class="sc-track-item">
       ${t.artwork_url
         ? `<img class="sc-track-thumb" src="${esc(t.artwork_url)}" alt="" loading="lazy">`
@@ -225,7 +256,7 @@ function renderTrackList(container, tracks, emptyMsg) {
 
 el.clearHistory.addEventListener('click', async () => {
   await apiPost('history.php', { action: 'clear' });
-  el.historyList.innerHTML = '<p class="sc-empty">No history yet</p>';
+  el.historyList.innerHTML = '<p class="sc-empty sc-history-empty">No history yet</p>';
 });
 
 // ── MusicBrainz ───────────────────────────────────────────────────────────────
@@ -367,36 +398,28 @@ async function runSearch() {
 
   const items = el.searchResults.querySelectorAll('.sc-search-result-item');
   items.forEach((item, i) => {
-    item.addEventListener('click', () => {
+    item.addEventListener('click', async () => {
       const t = data.tracks[i];
-      state.selectedUri = t.uri;
-      el.queueTrackLabel.textContent = `${t.name} — ${t.artists}`;
-      el.queueNextBtn.disabled = false;
       el.searchResults.style.display = 'none';
       el.searchInput.value = '';
+      await apiPost('controls.php', { action: 'queue', uri: t.uri });
+      setTimeout(pollQueue, 800);
     });
   });
 }
 
+// Close search results when clicking outside — check contains() to handle icon child clicks
 document.addEventListener('click', e => {
-  if (!el.searchResults.contains(e.target) && e.target !== el.searchInput && e.target !== el.searchSubmit) {
+  if (!el.searchResults.contains(e.target) && e.target !== el.searchInput && !el.searchSubmit.contains(e.target)) {
     el.searchResults.style.display = 'none';
   }
-});
-
-el.queueNextBtn.addEventListener('click', async () => {
-  if (!state.selectedUri) return;
-  await apiPost('controls.php', { action: 'queue', uri: state.selectedUri });
-  state.selectedUri = null;
-  el.queueTrackLabel.textContent = 'Search first';
-  el.queueNextBtn.disabled = true;
-  setTimeout(pollQueue, 800);
 });
 
 // ── Playlist picker ───────────────────────────────────────────────────────────
 const playlistModal = new bootstrap.Modal(document.getElementById('playlist-modal'));
 
 el.changePlaylist.addEventListener('click', async () => {
+  el.playlistSearch.value = '';
   el.playlistList.innerHTML = '<p class="sc-empty">Loading…</p>';
   playlistModal.show();
 
@@ -426,6 +449,15 @@ el.changePlaylist.addEventListener('click', async () => {
       el.playlistName.classList.add('active');
       playlistModal.hide();
     });
+  });
+});
+
+// Playlist filter
+el.playlistSearch.addEventListener('input', () => {
+  const q = el.playlistSearch.value.toLowerCase().trim();
+  el.playlistList.querySelectorAll('.sc-playlist-item').forEach(item => {
+    const name = item.querySelector('.sc-playlist-item-name')?.textContent.toLowerCase() ?? '';
+    item.style.display = !q || name.includes(q) ? '' : 'none';
   });
 });
 

@@ -59,6 +59,18 @@ switch ($action) {
         }
         break;
 
+    case 'remove_from_playlist':
+        $playlist_uri = $input['playlist_uri'] ?? '';
+        $track_uri    = $input['track_uri'] ?? '';
+        if ($playlist_uri && $track_uri && str_starts_with($playlist_uri, 'spotify:playlist:')) {
+            $playlist_id = explode(':', $playlist_uri)[2] ?? '';
+            if ($playlist_id) {
+                spotify_api('DELETE', '/playlists/' . $playlist_id . '/tracks', [],
+                    ['tracks' => [['uri' => $track_uri]]]);
+            }
+        }
+        break;
+
     default:
         http_response_code(400);
         echo json_encode(['error' => 'unknown action']);

@@ -63,11 +63,12 @@ httpdocs/
     js/app.js
 ```
 
-## Layout (3-column)
+## Layout
 
-- **Left**: Upcoming tracks (scrollable, circular art) / Recently played (scrollable, circular art, clear button) — 50/50 vertical split
-- **Centre**: Search → queue next / Song title (full wrap) / Large artwork / Currently playing info box (scrollable — Spotify data)
-- **Right**: Playlist active + Change playlist / Progress seek bar / 6 transport controls / Mute + volume / MusicBrainz info box (scrollable)
+- **Left** (230px): Upcoming tracks only (scrollable, circular art, red X to remove from playlist when playing a playlist)
+- **Centre**: Search → queue next / Song title / Artwork (180×180) + Spotify info box side-by-side / Mute + full-width volume slider
+- **Right** (220px): Playlist active + Change playlist (with search filter) / Progress seek bar / 6 transport controls / MusicBrainz info box (scrollable)
+- **Bottom bar** (80px): Recently played — full-width horizontal scroll strip (circular art, clear button)
 
 ## Transport Controls (6)
 
@@ -125,3 +126,5 @@ CREATE TABLE tokens (
 ## Spotify OAuth Scopes
 
 `user-read-playback-state` · `user-modify-playback-state` · `user-read-currently-playing` · `user-read-recently-played` · `playlist-read-private` · `playlist-read-collaborative`
+
+**For remove-from-playlist feature** (red X on queue items): also add `playlist-modify-private` and `playlist-modify-public` to `SPOTIFY_SCOPES` in `config.php`, then re-authenticate. The X button only appears when the context is a playlist URI.

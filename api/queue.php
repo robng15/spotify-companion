@@ -18,6 +18,7 @@ $queue = array_map(function($item) {
              ?? '';
     return [
         'track_id'   => $item['id'],
+        'uri'        => $item['uri'] ?? null,
         'track_name' => $item['name'],
         'artist'     => $artists,
         'artwork_url'=> $artwork,

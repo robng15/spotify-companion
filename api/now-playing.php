@@ -71,4 +71,5 @@ echo json_encode([
     'liveness'         => $features['liveness'] ?? null,
     'speechiness'      => $features['speechiness'] ?? null,
     'loudness'         => $features['loudness'] ?? null,
+    'context_uri'      => $playback['context']['uri'] ?? null,
 ]);

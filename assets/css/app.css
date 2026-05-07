@@ -24,14 +24,23 @@ body {
 /* ── App shell ────────────────────────────────────────────────────────────── */
 .sc-app {
   display: flex;
+  flex-direction: column;
   height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Main area (3 columns) ────────────────────────────────────────────────── */
+.sc-main-area {
+  display: flex;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
 /* ── Left panel ───────────────────────────────────────────────────────────── */
 .sc-left {
-  width: 190px;
-  min-width: 170px;
+  width: 230px;
+  min-width: 200px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -103,6 +112,8 @@ body {
 
 .sc-track-name-wrap {
   overflow: hidden;
+  flex: 1;
+  min-width: 0;
 }
 
 .sc-track-name {
@@ -120,6 +131,27 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Remove-from-playlist button on queue items */
+.sc-track-remove {
+  background: none;
+  border: none;
+  color: rgba(220, 60, 60, 0.65);
+  font-size: 0.8rem;
+  padding: 2px 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sc-track-remove:hover {
+  color: #ff4444;
+  background: rgba(255, 60, 60, 0.12);
 }
 
 .sc-btn-clear {
@@ -237,26 +269,6 @@ body {
 .sc-search-result-track  { font-size: 0.84rem; display: block; }
 .sc-search-result-artist { font-size: 0.72rem; color: var(--muted); }
 
-.sc-btn-queue {
-  background: none;
-  border: 1px solid rgba(255,255,255,0.25);
-  color: var(--text);
-  border-radius: var(--radius);
-  padding: 7px 14px;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-  flex-shrink: 0;
-}
-
-.sc-btn-queue:not([disabled]):hover {
-  background: rgba(255,255,255,0.07);
-  border-color: var(--accent);
-}
-
-.sc-btn-queue[disabled] { opacity: 0.35; cursor: default; }
-
 /* Song title */
 .sc-song-title {
   font-size: clamp(1.1rem, 2.2vw, 1.9rem);
@@ -265,11 +277,20 @@ body {
   flex-shrink: 0;
 }
 
-/* Artwork */
-.sc-artwork-wrap {
-  position: relative;
+/* Artwork + info side-by-side row */
+.sc-artwork-info-row {
+  display: flex;
+  gap: 14px;
   flex: 1;
   min-height: 0;
+}
+
+.sc-artwork-wrap {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .sc-artwork {
@@ -290,23 +311,32 @@ body {
   justify-content: center;
   background: rgba(255,255,255,0.04);
   border-radius: 6px;
-  font-size: 5rem;
+  font-size: 4rem;
   color: var(--muted);
 }
 
 /* Track info box */
 .sc-info-box {
-  flex-shrink: 0;
-  height: 140px;
+  flex: 1;
+  min-height: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 10px 14px;
   font-size: 0.8rem;
   line-height: 1.65;
+  overflow-y: auto;
 }
 
 .sc-info-label { color: var(--muted); }
 .sc-info-value { color: var(--text); }
+
+/* Volume row (in centre, full width) */
+.sc-volume-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
 
 /* ── Right panel ──────────────────────────────────────────────────────────── */
 .sc-right {
@@ -364,8 +394,7 @@ body {
   flex-shrink: 0;
 }
 
-.sc-progress-row,
-.sc-volume-row {
+.sc-progress-row {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -460,6 +489,70 @@ body {
 
 .sc-mb-box strong:first-child { margin-top: 0; }
 
+/* ── History bar (full-width bottom strip) ────────────────────────────────── */
+.sc-history-bar {
+  flex-shrink: 0;
+  height: 80px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.sc-history-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-right: 1px solid var(--border);
+}
+
+.sc-history-label > span {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Horizontal scroll container for history items */
+.sc-history-scroll {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 10px;
+  gap: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.12) transparent;
+}
+
+.sc-history-scroll::-webkit-scrollbar       { height: 4px; }
+.sc-history-scroll::-webkit-scrollbar-track { background: transparent; }
+.sc-history-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+/* History items are fixed-width cards inside horizontal scroll */
+.sc-history-scroll .sc-track-item {
+  flex-shrink: 0;
+  width: 160px;
+  padding: 3px 5px;
+}
+
+.sc-history-scroll .sc-track-name {
+  -webkit-line-clamp: 1;
+}
+
+.sc-history-empty {
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
 /* ── Shared utilities ─────────────────────────────────────────────────────── */
 .sc-scrollable {
   overflow-y: auto;
@@ -485,6 +578,11 @@ body {
 }
 
 .sc-modal-content .modal-header {
+  border-bottom: 1px solid var(--border);
+}
+
+.sc-playlist-search-wrap {
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border);
 }
 
