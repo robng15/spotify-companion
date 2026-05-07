@@ -78,15 +78,19 @@ usort($appears_on, fn($a, $b) => ($a['year'] ?? '9999') <=> ($b['year'] ?? '9999
 // Primary artist MBID
 $artist_mbid = $recording['artist-credit'][0]['artist']['id'] ?? null;
 
-// Step 2: get artist members
-$members = [];
+// Step 2: get artist members + URL relations (Wikipedia link)
+$members    = [];
+$wiki_bio   = null;
+$wiki_image = null;
+
 if ($artist_mbid) {
     sleep(1);
     $artist_data = mb_get(
-        "https://musicbrainz.org/ws/2/artist/{$artist_mbid}?inc=artist-rels&fmt=json",
+        "https://musicbrainz.org/ws/2/artist/{$artist_mbid}?inc=artist-rels+url-rels&fmt=json",
         $ua
     );
     if ($artist_data) {
+        // Band members
         foreach ($artist_data['relations'] ?? [] as $rel) {
             if (($rel['target-type'] ?? '') !== 'artist') continue;
             $type = strtolower($rel['type'] ?? '');
@@ -97,6 +101,30 @@ if ($artist_mbid) {
                 'begin'      => $rel['begin'] ?? null,
                 'end'        => $rel['end'] ?? null,
             ];
+        }
+
+        // Wikipedia URL
+        $wiki_title = null;
+        foreach ($artist_data['relations'] ?? [] as $rel) {
+            if (($rel['target-type'] ?? '') !== 'url') continue;
+            $url = $rel['url']['resource'] ?? '';
+            if (preg_match('|https?://en\.wikipedia\.org/wiki/(.+)|', $url, $m)) {
+                $wiki_title = urldecode($m[1]);
+                break;
+            }
+        }
+
+        // Fetch Wikipedia summary (bio + thumbnail)
+        if ($wiki_title) {
+            sleep(1);
+            $wiki = mb_get(
+                'https://en.wikipedia.org/api/rest_v1/page/summary/' . urlencode($wiki_title),
+                $ua
+            );
+            if ($wiki) {
+                $wiki_bio   = $wiki['extract']            ?? null;
+                $wiki_image = $wiki['thumbnail']['source'] ?? null;
+            }
         }
     }
 }
@@ -144,6 +172,8 @@ $result = [
     'composers'  => array_values($composers),
     'producers'  => array_values($producers),
     'appears_on' => $appears_on,
+    'wiki_bio'   => $wiki_bio,
+    'wiki_image' => $wiki_image,
 ];
 
 cache_and_respond($db, $isrc, $result);

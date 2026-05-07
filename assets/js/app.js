@@ -312,6 +312,16 @@ async function fetchMusicBrainz() {
 function renderMusicBrainz(d) {
   let html = '';
 
+  // Artist photo + Wikipedia bio
+  if (d.wiki_image || d.wiki_bio) {
+    if (d.wiki_image) {
+      html += `<img src="${escAttr(d.wiki_image)}" class="sc-artist-photo" alt="Artist photo">`;
+    }
+    if (d.wiki_bio) {
+      html += `<p class="sc-wiki-bio">${esc(d.wiki_bio)}</p>`;
+    }
+  }
+
   if (d.members?.length) {
     html += `<strong>Members</strong>`;
     html += d.members.map(m => {

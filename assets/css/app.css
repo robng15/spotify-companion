@@ -617,6 +617,21 @@ body {
 
 .sc-mb-box strong:first-child { margin-top: 0; }
 
+.sc-artist-photo {
+  width: 100%;
+  border-radius: 6px;
+  display: block;
+  margin-bottom: 8px;
+  object-fit: cover;
+}
+
+.sc-wiki-bio {
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 10px;
+}
+
 /* ── History bar (full-width bottom strip) ────────────────────────────────── */
 .sc-history-bar {
   flex-shrink: 0;
