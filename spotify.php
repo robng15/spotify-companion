@@ -63,8 +63,13 @@ function save_tokens(string $access_token, string $refresh_token, int $expires_i
     $expires_at = date('Y-m-d H:i:s', time() + $expires_in);
 
     get_db()->prepare("
-        INSERT OR REPLACE INTO tokens (user_id, display_name, access_token, refresh_token, expires_at)
+        INSERT INTO tokens (user_id, display_name, access_token, refresh_token, expires_at)
         VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+            display_name  = COALESCE(excluded.display_name, display_name),
+            access_token  = excluded.access_token,
+            refresh_token = excluded.refresh_token,
+            expires_at    = excluded.expires_at
     ")->execute([$user_id, $display_name ?: null, $access_token, $refresh_token, $expires_at]);
 
     if ($user_id) $_SESSION['active_user_id'] = $user_id;

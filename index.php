@@ -14,6 +14,9 @@ if (!is_authenticated() || isset($_GET['add_account'])) {
     header('Location: ' . spotify_auth_url($state));
     exit;
 }
+
+$auth_error = $_SESSION['auth_error'] ?? null;
+unset($_SESSION['auth_error']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -28,6 +31,14 @@ if (!is_authenticated() || isset($_GET['add_account'])) {
 <body>
 
 <div class="sc-app">
+
+  <?php if ($auth_error): ?>
+  <div id="auth-error-banner" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#7b1010;color:#fff;font-size:0.83rem;padding:8px 16px;display:flex;align-items:center;gap:12px;">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span><?= htmlspecialchars($auth_error) ?></span>
+    <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;color:#fff;font-size:1rem;cursor:pointer;line-height:1;" title="Dismiss">&times;</button>
+  </div>
+  <?php endif; ?>
 
   <img id="bg-artwork" src="" alt="" aria-hidden="true">
 
