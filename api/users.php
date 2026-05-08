@@ -19,3 +19,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo json_encode(['ok' => $ok, 'active' => get_active_user_id()]);
     exit;
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    $input   = json_decode(file_get_contents('php://input'), true) ?? [];
+    $user_id = $input['user_id'] ?? '';
+    if (!$user_id) { echo json_encode(['ok' => false]); exit; }
+
+    // Don't delete the currently active user while they're selected
+    if ($user_id === get_active_user_id()) {
+        echo json_encode(['ok' => false, 'error' => 'Cannot remove the active user']);
+        exit;
+    }
+
+    $stmt = get_db()->prepare("DELETE FROM tokens WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    echo json_encode(['ok' => $stmt->rowCount() > 0]);
+    exit;
+}

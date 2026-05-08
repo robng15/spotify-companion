@@ -613,17 +613,32 @@ async function loadUsers() {
     <div class="sc-user-popup-item ${u.user_id === data.active ? 'active' : ''}"
          data-uid="${esc(u.user_id)}">
       <i class="bi bi-person-circle"></i>
-      ${esc(u.display_name ?? u.user_id)}
+      <span class="sc-user-popup-name">${esc(u.display_name ?? u.user_id)}</span>
+      ${u.user_id !== data.active ? `<button class="sc-user-remove" data-uid="${esc(u.user_id)}" title="Remove account"><i class="bi bi-x"></i></button>` : ''}
     </div>`).join('');
 
   el.userPopup.querySelectorAll('.sc-user-popup-item').forEach(item => {
-    item.addEventListener('click', async () => {
+    item.addEventListener('click', async e => {
+      if (e.target.closest('.sc-user-remove')) return;
       await apiPost('users.php', { user_id: item.dataset.uid });
       el.userPopup.classList.remove('open');
       // Reset track state so now-playing reloads fresh for new user
       state.trackId = null;
       loadUsers();
       pollNowPlaying();
+    });
+  });
+
+  el.userPopup.querySelectorAll('.sc-user-remove').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const uid = btn.dataset.uid;
+      const res = await fetch('api/users.php', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: uid }),
+      }).then(r => r.json()).catch(() => null);
+      if (res?.ok) loadUsers();
     });
   });
 }

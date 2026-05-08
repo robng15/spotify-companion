@@ -41,16 +41,28 @@ if (empty($data['access_token'])) {
 $ch = curl_init('https://api.spotify.com/v1/me');
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_TIMEOUT        => 10,
     CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $data['access_token']],
 ]);
-$me = json_decode(curl_exec($ch), true) ?? [];
+$me_raw    = curl_exec($ch);
+$me_err    = curl_error($ch);
 curl_close($ch);
+
+if ($me_raw === false) {
+    fail('Could not fetch Spotify profile: ' . ($me_err ?: 'cURL request failed'));
+}
+
+$me = json_decode($me_raw, true) ?? [];
 
 if (!empty($me['error'])) {
     fail('Could not fetch Spotify profile: ' . json_encode($me['error']));
 }
 
-$user_id      = $me['id']           ?? ('user_' . uniqid());
+if (empty($me['id'])) {
+    fail('Could not fetch Spotify profile: no user ID returned (response: ' . substr($me_raw, 0, 200) . ')');
+}
+
+$user_id      = $me['id'];
 $display_name = $me['display_name'] ?? $user_id;
 
 save_tokens($data['access_token'], $data['refresh_token'], $data['expires_in'], $user_id, $display_name);

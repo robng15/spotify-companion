@@ -164,6 +164,22 @@ body {
 
 .sc-user-popup-item.active { color: var(--accent); }
 
+.sc-user-popup-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sc-user-remove {
+  display: none;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.sc-user-popup-item:hover .sc-user-remove { display: inline-flex; align-items: center; }
+.sc-user-remove:hover { color: #e05252; }
+
 .sc-section {
   display: flex;
   flex-direction: column;
