@@ -158,12 +158,14 @@ function spotify_api(string $method, string $endpoint, array $query = [], ?array
 
 // ── Auth URL builder ──────────────────────────────────────────────────────────
 
-function spotify_auth_url(string $state): string {
-    return 'https://accounts.spotify.com/authorize?' . http_build_query([
+function spotify_auth_url(string $state, bool $show_dialog = false): string {
+    $params = [
         'response_type' => 'code',
         'client_id'     => SPOTIFY_CLIENT_ID,
         'scope'         => SPOTIFY_SCOPES,
         'redirect_uri'  => SPOTIFY_REDIRECT_URI,
         'state'         => $state,
-    ]);
+    ];
+    if ($show_dialog) $params['show_dialog'] = 'true';
+    return 'https://accounts.spotify.com/authorize?' . http_build_query($params);
 }

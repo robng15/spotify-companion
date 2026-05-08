@@ -11,7 +11,7 @@ if (!is_authenticated() || isset($_GET['add_account'])) {
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
-    header('Location: ' . spotify_auth_url($state));
+    header('Location: ' . spotify_auth_url($state, isset($_GET['add_account'])));
     exit;
 }
 
