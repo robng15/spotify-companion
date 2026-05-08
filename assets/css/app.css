@@ -167,7 +167,8 @@ body {
 .sc-user-popup-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .sc-user-remove {
-  display: none;
+  display: inline-flex;
+  align-items: center;
   background: none;
   border: none;
   color: rgba(255,255,255,0.35);
@@ -177,7 +178,6 @@ body {
   font-size: 1rem;
   flex-shrink: 0;
 }
-.sc-user-popup-item:hover .sc-user-remove { display: inline-flex; align-items: center; }
 .sc-user-remove:hover { color: #e05252; }
 
 .sc-section {
