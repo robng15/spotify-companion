@@ -58,6 +58,11 @@ if (!empty($me['error'])) {
     fail('Could not fetch Spotify profile: ' . json_encode($me['error']));
 }
 
+// Spotify sometimes returns {"status":403,"message":"..."} with no "error" key
+if (!empty($me['message']) && empty($me['id'])) {
+    fail('Spotify: ' . $me['message']);
+}
+
 if (empty($me['id'])) {
     fail('Could not fetch Spotify profile: no user ID returned (response: ' . substr($me_raw, 0, 200) . ')');
 }
