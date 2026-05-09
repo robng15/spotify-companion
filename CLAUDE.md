@@ -58,7 +58,7 @@ httpdocs/
     search.php                      ← track search
     playlists.php                   ← full playlist library
     musicbrainz.php                 ← members/composers/appears-on/wiki bio+photo (cached)
-    users.php                       ← GET: list users + active; POST: switch active user
+    users.php                       ← GET: list users + active; POST: switch active user; DELETE: remove user by user_id (cannot remove active user)
     clear-mb-cache.php              ← authenticated endpoint to wipe mb_cache table
   assets/
     css/app.css
@@ -123,8 +123,9 @@ CREATE TABLE tokens (
 ## Key Implementation Notes
 
 - **OAuth state**: stored in a `SameSite=Lax` cookie (not PHP session) so it survives the cross-origin redirect from Spotify back to `callback.php`
-- **Multi-user**: tokens table keyed by `user_id` (Spotify user ID). `$_SESSION['active_user_id']` tracks current user; auto-selects first stored user on session restart. `?add_account=1` forces a new OAuth flow regardless of auth state. `switch_user()` clears session token cache.
-- **User identity**: `callback.php` fetches `/v1/me` immediately after token exchange to capture `user_id` and `display_name`
+- **Multi-user**: tokens table keyed by `user_id` (Spotify user ID). `$_SESSION['active_user_id']` tracks current user; auto-selects first stored user on session restart. `?add_account=1` forces a new OAuth flow with `show_dialog=true` (forces Spotify account picker). `switch_user()` clears session token cache. User popup shows a ✕ button to remove any non-active account.
+- **User identity**: `callback.php` fetches `/v1/me` immediately after token exchange to capture `user_id` and `display_name`. Fails explicitly with an error banner if the profile fetch fails or returns no ID — no fallback to fake IDs.
+- **Spotify app mode**: App is in Development mode on the Spotify Developer Dashboard — new users must be added to the allowlist at developer.spotify.com/dashboard before they can authenticate. Limit: 25 users.
 - **Audio features**: cached in PHP session per track ID — only fetched once per track, not every poll
 - **History deduplication**: checks last DB entry rather than session, so page reloads don't re-log the current track
 - **MusicBrainz first load**: 4–5 sequential API calls at 1 req/sec (ISRC → artist → Wikipedia → recording → work) — expect ~5s delay on first play of any track. Instant on repeat plays (SQLite cache). Clear cache at `/api/clear-mb-cache.php`
